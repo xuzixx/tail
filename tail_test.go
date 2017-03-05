@@ -7,7 +7,7 @@
 package tail
 
 import (
-	_ "fmt"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -382,6 +382,7 @@ func reSeek(t *testing.T, poll bool) {
 		"test.txt",
 		Config{Follow: true, ReOpen: false, Poll: poll})
 
+	fmt.Printf("++++ reSeek %v\n", tail.ReOpen)
 	go tailTest.VerifyTailOutput(tail, []string{
 		"a really long string goes here", "hello", "world", "h311o", "w0r1d", "endofworld"}, false)
 
@@ -391,7 +392,7 @@ func reSeek(t *testing.T, poll bool) {
 
 	// Delete after a reasonable delay, to give tail sufficient time
 	// to read all lines.
-	<-time.After(100 * time.Millisecond)
+	<-time.After(1 * time.Second)
 	tailTest.RemoveFile("test.txt")
 
 	// Do not bother with stopping as it could kill the tomb during
@@ -455,11 +456,15 @@ func (t TailTest) AppendFile(name string, contents string) {
 }
 
 func (t TailTest) TruncateFile(name string, contents string) {
+	fmt.Println("TruncateFile before open")
 	f, err := os.OpenFile(t.path+"/"+name, os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
+
+	<-time.After(2 * time.Second)
+	fmt.Println("TruncateFile WriteString")
 	_, err = f.WriteString(contents)
 	if err != nil {
 		t.Fatal(err)
